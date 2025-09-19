@@ -13,6 +13,12 @@ export interface DemoResponse {
 
 export type RepeatType = "once" | "daily";
 
+export interface HistoryEntryDTO {
+  type: "fired" | "taken" | "snoozed" | "paused" | "resumed" | "missed" | "note";
+  at: number;
+  meta?: any;
+}
+
 export interface ReminderDTO {
   id: string;
   name: string;
@@ -26,6 +32,8 @@ export interface ReminderDTO {
   patientAge?: number | null;
   phone?: string;
   sendSms?: boolean;
+  notes?: string;
+  history?: HistoryEntryDTO[];
   createdAt: number;
   lastFiredAt?: number;
 }
