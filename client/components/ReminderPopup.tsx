@@ -52,7 +52,7 @@ export default function ReminderPopup() {
 
             <div className="mt-3 flex gap-2">
               <Button variant="outline" size="sm" onClick={() => { ReminderAPI.snooze(payload.id, 10); setPayload(null); }}>
-                <Snooze className="h-4 w-4" /> Snooze
+                <Clock className="h-4 w-4" /> Snooze
               </Button>
               <Button variant="secondary" size="sm" onClick={() => { ReminderAPI.markTaken(payload.id); setPayload(null); }}>
                 <Check className="h-4 w-4" /> Taken
