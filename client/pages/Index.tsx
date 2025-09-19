@@ -33,6 +33,9 @@ export default function Index() {
   const [repeat, setRepeat] = useState<"once" | "daily">("daily");
   const [sendSms, setSendSms] = useState(false);
   const [phone, setPhone] = useState("");
+  // Patient details
+  const [patientName, setPatientName] = useState("");
+  const [patientAge, setPatientAge] = useState("");
 
   useEffect(() => {
     if (Notification && Notification.permission !== "granted") {
@@ -49,6 +52,8 @@ export default function Index() {
     setRepeat("daily");
     setSendSms(false);
     setPhone("");
+    setPatientName("");
+    setPatientAge("");
   }
 
   function onSubmit(e: React.FormEvent) {
@@ -57,7 +62,18 @@ export default function Index() {
       toast.error("Please enter a medicine name");
       return;
     }
-    addReminder({ name: name.trim(), dosage: dosage.trim(), times: times.filter(Boolean), repeat, sendSms: canSendSms, phone: phone.trim() });
+    // parse age
+    const ageNum = patientAge ? Number(patientAge) : null;
+    addReminder({
+      name: name.trim(),
+      dosage: dosage.trim(),
+      times: times.filter(Boolean),
+      repeat,
+      sendSms: canSendSms,
+      phone: phone.trim(),
+      patientName: patientName.trim() || undefined,
+      patientAge: ageNum,
+    });
     reset();
   }
 
@@ -97,6 +113,17 @@ export default function Index() {
                 <div className="grid gap-2">
                   <Label htmlFor="dosage">Dosage</Label>
                   <Input id="dosage" placeholder="e.g. 500mg" value={dosage} onChange={(e) => setDosage(e.target.value)} />
+                </div>
+
+                <div className="grid gap-2 sm:grid-cols-2 sm:items-center">
+                  <div>
+                    <Label htmlFor="patientName">Patient name</Label>
+                    <Input id="patientName" placeholder="e.g. John Doe" value={patientName} onChange={(e) => setPatientName(e.target.value)} />
+                  </div>
+                  <div>
+                    <Label htmlFor="patientAge">Age</Label>
+                    <Input id="patientAge" type="number" placeholder="e.g. 34" value={patientAge} onChange={(e) => setPatientAge(e.target.value)} />
+                  </div>
                 </div>
 
                 <div className="grid gap-2">
@@ -168,6 +195,9 @@ export default function Index() {
                       <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-2">
                           <p className="font-semibold truncate">{r.name}</p>
+                          {r.patientName && (
+                            <span className="text-xs text-muted-foreground">• {r.patientName}{r.patientAge ? `, ${r.patientAge}y` : ""}</span>
+                          )}
                           {r.dosage && <Badge variant="secondary">{r.dosage}</Badge>}
                           {r.repeat === "daily" ? <Badge>Daily</Badge> : <Badge variant="outline">Once</Badge>}
                         </div>
