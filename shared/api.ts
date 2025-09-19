@@ -14,7 +14,14 @@ export interface DemoResponse {
 export type RepeatType = "once" | "daily";
 
 export interface HistoryEntryDTO {
-  type: "fired" | "taken" | "snoozed" | "paused" | "resumed" | "missed" | "note";
+  type:
+    | "fired"
+    | "taken"
+    | "snoozed"
+    | "paused"
+    | "resumed"
+    | "missed"
+    | "note";
   at: number;
   meta?: any;
 }

@@ -20,7 +20,10 @@ function Header() {
       const v = localStorage.getItem("theme");
       if (v === "dark") return true;
       if (v === "light") return false;
-      return window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+      return (
+        window.matchMedia &&
+        window.matchMedia("(prefers-color-scheme: dark)").matches
+      );
     } catch {
       return false;
     }
@@ -47,7 +50,14 @@ function Header() {
           <span className="font-extrabold tracking-tight text-xl">Pillbox</span>
         </Link>
         <nav className="flex items-center gap-4 text-sm text-muted-foreground">
-          <a href="https://builder.io/c/docs/projects" target="_blank" rel="noreferrer" className="hover:text-foreground">Docs</a>
+          <a
+            href="https://builder.io/c/docs/projects"
+            target="_blank"
+            rel="noreferrer"
+            className="hover:text-foreground"
+          >
+            Docs
+          </a>
           <button
             aria-label="Preview reminder"
             title="Preview reminder"
@@ -60,10 +70,12 @@ function Header() {
                 patientAge: 34,
                 phone: "+15551234567",
                 notes: "Take after food",
-                history: [ { type: "fired", at: Date.now() - 1000 } ],
+                history: [{ type: "fired", at: Date.now() - 1000 }],
                 nextAt: Date.now(),
               };
-              window.dispatchEvent(new CustomEvent("pillbox:reminder-fired", { detail: payload }));
+              window.dispatchEvent(
+                new CustomEvent("pillbox:reminder-fired", { detail: payload }),
+              );
             }}
             className="inline-flex h-9 items-center gap-2 rounded-md bg-muted px-3 py-1 text-muted-foreground hover:bg-accent/60 active:scale-95 transition"
           >
@@ -76,7 +88,11 @@ function Header() {
             onClick={() => setIsDark((v) => !v)}
             className="inline-flex h-9 w-9 items-center justify-center rounded-md bg-muted text-muted-foreground hover:bg-accent/60 active:scale-95 transition"
           >
-            {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+            {isDark ? (
+              <Sun className="h-4 w-4" />
+            ) : (
+              <Moon className="h-4 w-4" />
+            )}
           </button>
         </nav>
       </div>
@@ -88,9 +104,7 @@ function Footer() {
   return (
     <footer className="border-t bg-white/60 dark:bg-background/60">
       <div className="container py-8 text-center text-sm text-muted-foreground">
-        <p>
-          Digital Pillbox Reminder • Built with ❤️
-        </p>
+        <p>Digital Pillbox Reminder • Built with ❤️</p>
       </div>
     </footer>
   );

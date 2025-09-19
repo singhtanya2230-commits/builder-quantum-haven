@@ -9,7 +9,8 @@ export async function requestNotificationPermission() {
 
 function beep() {
   try {
-    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const ctx = new (window.AudioContext ||
+      (window as any).webkitAudioContext)();
     const o = ctx.createOscillator();
     const g = ctx.createGain();
     o.type = "sine";
@@ -30,7 +31,10 @@ export async function notify(opts: { title: string; body?: string }) {
   if (typeof window === "undefined") return;
   if ("Notification" in window && Notification.permission === "granted") {
     try {
-      new Notification(opts.title, { body: opts.body, icon: "/placeholder.svg" });
+      new Notification(opts.title, {
+        body: opts.body,
+        icon: "/placeholder.svg",
+      });
     } catch {
       toast(opts.title, { description: opts.body });
     }

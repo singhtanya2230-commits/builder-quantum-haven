@@ -6,7 +6,14 @@ import { toast } from "sonner";
 export type RepeatType = "once" | "daily";
 
 export interface HistoryEntry {
-  type: "fired" | "taken" | "snoozed" | "paused" | "resumed" | "missed" | "note";
+  type:
+    | "fired"
+    | "taken"
+    | "snoozed"
+    | "paused"
+    | "resumed"
+    | "missed"
+    | "note";
   at: number;
   meta?: any;
 }
@@ -37,7 +44,11 @@ function parseHHMMToDate(hhmm: string, base: Date): Date {
   return set(base, { hours: h, minutes: m, seconds: 0, milliseconds: 0 });
 }
 
-function nextOccurrence(times: string[], repeat: RepeatType, from: Date): Date | null {
+function nextOccurrence(
+  times: string[],
+  repeat: RepeatType,
+  from: Date,
+): Date | null {
   const sorted = [...times].sort();
   for (const t of sorted) {
     const candidate = parseHHMMToDate(t, from);
@@ -74,7 +85,10 @@ export function useReminders() {
   function schedule(rem: Reminder) {
     if (rem.paused || rem.nextAt == null) return;
     const now = new Date();
-    const delay = Math.max(0, differenceInMilliseconds(new Date(rem.nextAt), now));
+    const delay = Math.max(
+      0,
+      differenceInMilliseconds(new Date(rem.nextAt), now),
+    );
     clearTimer(rem.id);
     timers.current[rem.id] = window.setTimeout(async () => {
       try {
@@ -95,9 +109,23 @@ export function useReminders() {
             history: rem.history ?? [],
             nextAt: rem.nextAt,
           };
-          window.dispatchEvent(new CustomEvent("pillbox:reminder-fired", { detail: payload }));
+          window.dispatchEvent(
+            new CustomEvent("pillbox:reminder-fired", { detail: payload }),
+          );
           // push fired history
-          setReminders((prev) => prev.map((r) => (r.id === rem.id ? { ...r, history: [ ...(r.history || []), { type: "fired", at: Date.now() } ] } : r)));
+          setReminders((prev) =>
+            prev.map((r) =>
+              r.id === rem.id
+                ? {
+                    ...r,
+                    history: [
+                      ...(r.history || []),
+                      { type: "fired", at: Date.now() },
+                    ],
+                  }
+                : r,
+            ),
+          );
         } catch (e) {
           // ignore
         }
@@ -107,7 +135,10 @@ export function useReminders() {
             const resp = await fetch("/api/sms", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ to: rem.phone, message: `Time to take ${rem.name}${rem.dosage ? ` (${rem.dosage})` : ""}` }),
+              body: JSON.stringify({
+                to: rem.phone,
+                message: `Time to take ${rem.name}${rem.dosage ? ` (${rem.dosage})` : ""}`,
+              }),
             });
             if (!resp.ok) {
               const data = await resp.json().catch(() => ({}));
@@ -179,7 +210,11 @@ export function useReminders() {
 
     // Register API implementation for global UI components
     function pushHistory(id: string, entry: HistoryEntry) {
-      setReminders((prev) => prev.map((r) => (r.id === id ? { ...r, history: [ ...(r.history || []), entry ] } : r)));
+      setReminders((prev) =>
+        prev.map((r) =>
+          r.id === id ? { ...r, history: [...(r.history || []), entry] } : r,
+        ),
+      );
     }
 
     function markMissed(id: string) {
@@ -188,7 +223,20 @@ export function useReminders() {
     }
 
     function addNote(id: string, note: string) {
-      setReminders((prev) => prev.map((r) => (r.id === id ? { ...r, notes: note, history: [ ...(r.history || []), { type: "note", at: Date.now(), meta: { note } } ] } : r)));
+      setReminders((prev) =>
+        prev.map((r) =>
+          r.id === id
+            ? {
+                ...r,
+                notes: note,
+                history: [
+                  ...(r.history || []),
+                  { type: "note", at: Date.now(), meta: { note } },
+                ],
+              }
+            : r,
+        ),
+      );
       toast.success("Note added");
     }
 
@@ -212,7 +260,9 @@ export function useReminders() {
       try {
         // clear implementation on unmount
         // dynamic import to avoid circular deps
-        import("@/lib/reminder-api").then((m) => m.ReminderAPI.clear()).catch(() => {});
+        import("@/lib/reminder-api")
+          .then((m) => m.ReminderAPI.clear())
+          .catch(() => {});
       } catch {}
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -221,10 +271,15 @@ export function useReminders() {
   const upcoming = useMemo(() => {
     return [...reminders]
       .filter((r) => !r.paused && r.nextAt != null)
-      .sort((a, b) => (a.nextAt! - b.nextAt!));
+      .sort((a, b) => a.nextAt! - b.nextAt!);
   }, [reminders]);
 
-  function addReminder(input: Omit<Reminder, "id" | "createdAt" | "nextAt" | "paused"> & { patientName?: string; patientAge?: number | null }) {
+  function addReminder(
+    input: Omit<Reminder, "id" | "createdAt" | "nextAt" | "paused"> & {
+      patientName?: string;
+      patientAge?: number | null;
+    },
+  ) {
     const id = crypto.randomUUID();
     const now = new Date();
     const n = nextOccurrence(input.times, input.repeat, now);
@@ -252,16 +307,23 @@ export function useReminders() {
   }
 
   function togglePause(id: string) {
-    setReminders((prev) => prev.map((r) => (r.id === id ? { ...r, paused: !r.paused } : r)));
+    setReminders((prev) =>
+      prev.map((r) => (r.id === id ? { ...r, paused: !r.paused } : r)),
+    );
   }
 
   function snooze(id: string, minutes: number) {
-    setReminders((prev) => prev.map((r) => {
-      if (r.id !== id) return r;
-      const when = Date.now() + minutes * 60_000;
-      const h = [ ...(r.history || []), { type: "snoozed", at: Date.now(), meta: { minutes } } ];
-      return { ...r, nextAt: when, history: h };
-    }));
+    setReminders((prev) =>
+      prev.map((r) => {
+        if (r.id !== id) return r;
+        const when = Date.now() + minutes * 60_000;
+        const h = [
+          ...(r.history || []),
+          { type: "snoozed", at: Date.now(), meta: { minutes } },
+        ];
+        return { ...r, nextAt: when, history: h };
+      }),
+    );
     toast(`Snoozed for ${minutes} min`);
   }
 
@@ -272,7 +334,7 @@ export function useReminders() {
       if (idx === -1) return prev;
       const r = next[idx];
       r.lastFiredAt = Date.now();
-      r.history = [ ...(r.history || []), { type: "taken", at: Date.now() } ];
+      r.history = [...(r.history || []), { type: "taken", at: Date.now() }];
       if (r.repeat === "daily") {
         const n = nextOccurrence(r.times, r.repeat, new Date());
         r.nextAt = n ? n.getTime() : null;
@@ -286,7 +348,9 @@ export function useReminders() {
   }
 
   function updateReminder(id: string, patch: Partial<Reminder>) {
-    setReminders((prev) => prev.map((r) => (r.id === id ? { ...r, ...patch } : r)));
+    setReminders((prev) =>
+      prev.map((r) => (r.id === id ? { ...r, ...patch } : r)),
+    );
   }
 
   return {
