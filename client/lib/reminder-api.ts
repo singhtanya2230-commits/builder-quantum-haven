@@ -3,6 +3,8 @@ type Impl = {
   markTaken: (id: string) => void;
   remove: (id: string) => void;
   togglePause: (id: string) => void;
+  markMissed?: (id: string) => void;
+  addNote?: (id: string, note: string) => void;
 } | null;
 
 let impl: Impl = null;
@@ -29,5 +31,13 @@ export const ReminderAPI = {
   togglePause(id: string) {
     if (!impl) return console.warn("ReminderAPI not initialized");
     return impl!.togglePause(id);
+  },
+  markMissed(id: string) {
+    if (!impl) return console.warn("ReminderAPI not initialized");
+    return impl!.markMissed ? impl!.markMissed(id) : undefined;
+  },
+  addNote(id: string, note: string) {
+    if (!impl) return console.warn("ReminderAPI not initialized");
+    return impl!.addNote ? impl!.addNote(id, note) : undefined;
   },
 };
