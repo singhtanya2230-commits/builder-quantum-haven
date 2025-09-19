@@ -178,6 +178,20 @@ export function useReminders() {
     });
 
     // Register API implementation for global UI components
+    function pushHistory(id: string, entry: HistoryEntry) {
+      setReminders((prev) => prev.map((r) => (r.id === id ? { ...r, history: [ ...(r.history || []), entry ] } : r)));
+    }
+
+    function markMissed(id: string) {
+      pushHistory(id, { type: "missed", at: Date.now() });
+      toast.error("Reminder marked as missed");
+    }
+
+    function addNote(id: string, note: string) {
+      setReminders((prev) => prev.map((r) => (r.id === id ? { ...r, notes: note, history: [ ...(r.history || []), { type: "note", at: Date.now(), meta: { note } } ] } : r)));
+      toast.success("Note added");
+    }
+
     (async () => {
       try {
         const mod = await import("@/lib/reminder-api");
@@ -186,6 +200,8 @@ export function useReminders() {
           markTaken,
           remove: removeReminder,
           togglePause,
+          markMissed,
+          addNote,
         });
       } catch {
         // ignore
