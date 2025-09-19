@@ -49,6 +49,27 @@ function Header() {
         <nav className="flex items-center gap-4 text-sm text-muted-foreground">
           <a href="https://builder.io/c/docs/projects" target="_blank" rel="noreferrer" className="hover:text-foreground">Docs</a>
           <button
+            aria-label="Preview reminder"
+            title="Preview reminder"
+            onClick={() => {
+              const payload = {
+                id: "preview-1",
+                name: "Amoxicillin",
+                dosage: "500mg",
+                patientName: "John Doe",
+                patientAge: 34,
+                phone: "+15551234567",
+                notes: "Take after food",
+                history: [ { type: "fired", at: Date.now() - 1000 } ],
+                nextAt: Date.now(),
+              };
+              window.dispatchEvent(new CustomEvent("pillbox:reminder-fired", { detail: payload }));
+            }}
+            className="inline-flex h-9 items-center gap-2 rounded-md bg-muted px-3 py-1 text-muted-foreground hover:bg-accent/60 active:scale-95 transition"
+          >
+            <Bell className="h-4 w-4" /> Preview
+          </button>
+          <button
             aria-pressed={isDark}
             aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
             title={isDark ? "Light mode" : "Dark mode"}
