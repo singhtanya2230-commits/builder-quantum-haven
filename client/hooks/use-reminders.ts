@@ -163,6 +163,23 @@ export function useReminders() {
         return r;
       });
     });
+
+    // Register API implementation for global UI components
+    try {
+      const { ReminderAPI } = await import("@/lib/reminder-api");
+      ReminderAPI.set({
+        snooze,
+        markTaken,
+        remove: removeReminder,
+        togglePause,
+      });
+      return () => {
+        ReminderAPI.clear();
+      };
+    } catch {
+      return;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const upcoming = useMemo(() => {
