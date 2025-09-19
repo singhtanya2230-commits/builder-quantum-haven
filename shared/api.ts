@@ -21,6 +21,9 @@ export interface ReminderDTO {
   repeat: RepeatType;
   nextAt: number | null;
   paused: boolean;
+  // Patient
+  patientName?: string;
+  patientAge?: number | null;
   phone?: string;
   sendSms?: boolean;
   createdAt: number;
