@@ -10,6 +10,7 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import { Pill, Moon, Sun } from "lucide-react";
 import { useEffect, useState } from "react";
+import ReminderPopup from "@/components/ReminderPopup";
 
 const queryClient = new QueryClient();
 
