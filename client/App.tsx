@@ -8,7 +8,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
-import { Pill, Moon, Sun } from "lucide-react";
+import { Pill, Moon, Sun, Bell } from "lucide-react";
 import { useEffect, useState } from "react";
 import ReminderPopup from "@/components/ReminderPopup";
 
