@@ -71,6 +71,21 @@ export function useReminders() {
           title: `Time to take ${rem.name}`,
           body: rem.dosage ? `Dosage: ${rem.dosage}` : undefined,
         });
+        if (rem.sendSms && rem.phone) {
+          try {
+            const resp = await fetch("/api/sms", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ to: rem.phone, message: `Time to take ${rem.name}${rem.dosage ? ` (${rem.dosage})` : ""}` }),
+            });
+            if (!resp.ok) {
+              const data = await resp.json().catch(() => ({}));
+              console.warn("SMS send failed:", data?.error || resp.statusText);
+            }
+          } catch (e) {
+            console.warn("SMS request error", e);
+          }
+        }
       } finally {
         setReminders((prev) => {
           const next = [...prev];
