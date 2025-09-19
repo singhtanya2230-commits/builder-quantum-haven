@@ -165,20 +165,27 @@ export function useReminders() {
     });
 
     // Register API implementation for global UI components
-    try {
-      const { ReminderAPI } = await import("@/lib/reminder-api");
-      ReminderAPI.set({
-        snooze,
-        markTaken,
-        remove: removeReminder,
-        togglePause,
-      });
-      return () => {
-        ReminderAPI.clear();
-      };
-    } catch {
-      return;
-    }
+    (async () => {
+      try {
+        const mod = await import("@/lib/reminder-api");
+        mod.ReminderAPI.set({
+          snooze,
+          markTaken,
+          remove: removeReminder,
+          togglePause,
+        });
+      } catch {
+        // ignore
+      }
+    })();
+
+    return () => {
+      try {
+        // clear implementation on unmount
+        // dynamic import to avoid circular deps
+        import("@/lib/reminder-api").then((m) => m.ReminderAPI.clear()).catch(() => {});
+      } catch {}
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
