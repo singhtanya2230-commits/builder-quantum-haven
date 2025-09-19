@@ -13,6 +13,9 @@ export interface Reminder {
   repeat: RepeatType;
   nextAt: number | null; // epoch ms
   paused: boolean;
+  // Patient details
+  patientName?: string;
+  patientAge?: number | null;
   sendSms?: boolean;
   phone?: string;
   createdAt: number;
@@ -153,7 +156,7 @@ export function useReminders() {
       .sort((a, b) => (a.nextAt! - b.nextAt!));
   }, [reminders]);
 
-  function addReminder(input: Omit<Reminder, "id" | "createdAt" | "nextAt" | "paused">) {
+  function addReminder(input: Omit<Reminder, "id" | "createdAt" | "nextAt" | "paused"> & { patientName?: string; patientAge?: number | null }) {
     const id = crypto.randomUUID();
     const now = new Date();
     const n = nextOccurrence(input.times, input.repeat, now);
@@ -165,6 +168,8 @@ export function useReminders() {
       repeat: input.repeat,
       sendSms: input.sendSms,
       phone: input.phone,
+      patientName: input.patientName,
+      patientAge: input.patientAge ?? null,
       createdAt: Date.now(),
       paused: false,
       nextAt: n ? n.getTime() : null,
