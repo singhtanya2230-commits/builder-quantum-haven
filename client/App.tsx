@@ -8,11 +8,34 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
-import { Pill } from "lucide-react";
+import { Pill, Moon, Sun } from "lucide-react";
+import { useEffect, useState } from "react";
 
 const queryClient = new QueryClient();
 
 function Header() {
+  const [isDark, setIsDark] = useState<boolean>(() => {
+    try {
+      const v = localStorage.getItem("theme");
+      if (v === "dark") return true;
+      if (v === "light") return false;
+      return window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+    } catch {
+      return false;
+    }
+  });
+
+  useEffect(() => {
+    try {
+      const root = document.documentElement;
+      if (isDark) root.classList.add("dark");
+      else root.classList.remove("dark");
+      localStorage.setItem("theme", isDark ? "dark" : "light");
+    } catch {
+      // ignore
+    }
+  }, [isDark]);
+
   return (
     <header className="sticky top-0 z-30 w-full border-b bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60 dark:bg-background/80">
       <div className="container flex h-16 items-center justify-between">
@@ -24,6 +47,15 @@ function Header() {
         </Link>
         <nav className="flex items-center gap-4 text-sm text-muted-foreground">
           <a href="https://builder.io/c/docs/projects" target="_blank" rel="noreferrer" className="hover:text-foreground">Docs</a>
+          <button
+            aria-pressed={isDark}
+            aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+            title={isDark ? "Light mode" : "Dark mode"}
+            onClick={() => setIsDark((v) => !v)}
+            className="inline-flex h-9 w-9 items-center justify-center rounded-md bg-muted text-muted-foreground hover:bg-accent/60 active:scale-95 transition"
+          >
+            {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+          </button>
         </nav>
       </div>
     </header>
