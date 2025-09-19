@@ -5,6 +5,12 @@ import { toast } from "sonner";
 
 export type RepeatType = "once" | "daily";
 
+export interface HistoryEntry {
+  type: "fired" | "taken" | "snoozed" | "paused" | "resumed" | "missed" | "note";
+  at: number;
+  meta?: any;
+}
+
 export interface Reminder {
   id: string;
   name: string;
@@ -18,6 +24,8 @@ export interface Reminder {
   patientAge?: number | null;
   sendSms?: boolean;
   phone?: string;
+  notes?: string;
+  history?: HistoryEntry[];
   createdAt: number;
   lastFiredAt?: number;
 }
