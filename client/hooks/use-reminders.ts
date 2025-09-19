@@ -74,6 +74,21 @@ export function useReminders() {
           title: `Time to take ${rem.name}`,
           body: rem.dosage ? `Dosage: ${rem.dosage}` : undefined,
         });
+        // Dispatch an in-app event so UI can show a popup with actions
+        try {
+          const payload = {
+            id: rem.id,
+            name: rem.name,
+            dosage: rem.dosage,
+            patientName: rem.patientName,
+            patientAge: rem.patientAge,
+            phone: rem.phone,
+          };
+          window.dispatchEvent(new CustomEvent("pillbox:reminder-fired", { detail: payload }));
+        } catch (e) {
+          // ignore
+        }
+
         if (rem.sendSms && rem.phone) {
           try {
             const resp = await fetch("/api/sms", {
