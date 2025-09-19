@@ -91,8 +91,13 @@ export function useReminders() {
             patientName: rem.patientName,
             patientAge: rem.patientAge,
             phone: rem.phone,
+            notes: rem.notes,
+            history: rem.history ?? [],
+            nextAt: rem.nextAt,
           };
           window.dispatchEvent(new CustomEvent("pillbox:reminder-fired", { detail: payload }));
+          // push fired history
+          setReminders((prev) => prev.map((r) => (r.id === rem.id ? { ...r, history: [ ...(r.history || []), { type: "fired", at: Date.now() } ] } : r)));
         } catch (e) {
           // ignore
         }
