@@ -82,23 +82,44 @@ export default function Index() {
   return (
     <main className="container px-4 py-12">
       <section className="mx-auto max-w-4xl">
-        <div className="mb-8 text-center">
-          <div className="inline-flex items-center gap-2 rounded-full bg-secondary px-3 py-1 text-xs font-semibold text-secondary-foreground">
-            <Bell className="h-3.5 w-3.5" /> Digital Pillbox Reminder
-          </div>
-          <h1 className="mt-4 text-4xl font-extrabold tracking-tight sm:text-5xl">Never miss a dose again</h1>
-          <p className="mt-3 text-muted-foreground text-lg">
-            Input your medicines and schedule reminders. Get local notifications instantly. Optional SMS via server when configured.
-          </p>
-          {hasDeniedNotifications && (
-            <div className="mt-4 rounded-md border border-amber-300 bg-amber-50 p-3 text-amber-900">
-              Notifications are blocked. Enable them in your browser settings to get alerts.
+        <div className="mb-8">
+          <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-cyan-50 via-white to-blue-50 dark:from-transparent p-6 shadow-xl">
+            <div className="absolute -left-20 -top-20 h-56 w-56 rounded-full bg-gradient-to-br from-cyan-200 to-blue-300 opacity-40 blur-3xl transform rotate-45" />
+            <div className="relative z-10 grid gap-4 md:grid-cols-2 md:items-center">
+              <div>
+                <div className="inline-flex items-center gap-3 rounded-full bg-white/60 px-3 py-1 text-sm font-semibold text-muted-foreground shadow-sm">
+                  <Bell className="h-4 w-4 text-cyan-600" /> Digital Pillbox
+                </div>
+                <h1 className="mt-4 text-4xl font-extrabold tracking-tight sm:text-5xl">Never miss a dose again</h1>
+                <p className="mt-3 text-muted-foreground text-lg max-w-xl">Add medicines, link them to patients, and receive timely reminders via local notifications or SMS. Beautiful, reliable and simple.</p>
+                {hasDeniedNotifications && (
+                  <div className="mt-4 rounded-lg border border-amber-300 bg-amber-50 p-3 text-amber-900">Notifications are blocked. Enable them in your browser settings to get alerts.</div>
+                )}
+              </div>
+              <div className="hidden md:block">
+                <div className="rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 p-6 text-white shadow-2xl">
+                  <div className="flex items-center gap-3">
+                    <div className="rounded-lg bg-white/20 p-3">
+                      <Clock className="h-6 w-6 text-white" />
+                    </div>
+                    <div>
+                      <div className="text-sm font-semibold">Smart scheduling</div>
+                      <div className="text-xs opacity-90">Daily or one-time reminders, with snooze and taken tracking.</div>
+                    </div>
+                  </div>
+                  <div className="mt-4 grid gap-2">
+                    <div className="text-xs opacity-90">Secure local storage</div>
+                    <div className="text-xs opacity-90">Optional SMS alerts (Twilio)</div>
+                  </div>
+                </div>
+              </div>
             </div>
-          )}
+          </div>
         </div>
 
         <div className="grid gap-6 md:grid-cols-2">
-          <Card className="shadow-md">
+          <Card className="overflow-hidden">
+            <div className="h-1 bg-gradient-to-r from-cyan-500 to-blue-600" />
             <CardHeader>
               <CardTitle>New Reminder</CardTitle>
               <CardDescription>Medicine, dosage and times. Choose once or daily.</CardDescription>
@@ -170,13 +191,13 @@ export default function Index() {
                     <AlarmClock className="h-4 w-4" />
                     <span>Reminders will ring at the times you set.</span>
                   </div>
-                  <Button type="submit">Schedule</Button>
+                  <Button type="submit" className="bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-lg">Schedule</Button>
                 </div>
               </form>
             </CardContent>
           </Card>
 
-          <Card className="shadow-md">
+          <Card className="overflow-hidden">
             <CardHeader>
               <CardTitle>Upcoming</CardTitle>
               <CardDescription>Your next reminders</CardDescription>
@@ -184,10 +205,10 @@ export default function Index() {
             <CardContent>
               <div className="space-y-3">
                 {upcoming.length === 0 && (
-                  <div className="rounded-md border bg-secondary/30 p-6 text-center text-sm text-muted-foreground">No upcoming reminders. Add one on the left.</div>
+                  <div className="rounded-lg border p-6 text-center text-sm text-muted-foreground">No upcoming reminders. Add one on the left.</div>
                 )}
                 {upcoming.map((r) => (
-                  <div key={r.id} className="flex items-center justify-between rounded-lg border p-3">
+                  <div key={r.id} className="flex items-center justify-between rounded-lg border bg-white/60 dark:bg-card p-3 hover:shadow-xl transition">
                     <div className="flex min-w-0 items-center gap-3">
                       <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 text-white">
                         <Clock className="h-5 w-5" />
