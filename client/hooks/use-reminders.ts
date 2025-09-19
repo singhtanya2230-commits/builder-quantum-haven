@@ -1,0 +1,212 @@
+import { useEffect, useMemo, useRef, useState } from "react";
+import { differenceInMilliseconds, isAfter, isBefore, set } from "date-fns";
+import { notify } from "@/lib/notifications";
+import { toast } from "sonner";
+
+export type RepeatType = "once" | "daily";
+
+export interface Reminder {
+  id: string;
+  name: string;
+  dosage: string;
+  times: string[]; // HH:mm (24h)
+  repeat: RepeatType;
+  nextAt: number | null; // epoch ms
+  paused: boolean;
+  sendSms?: boolean;
+  phone?: string;
+  createdAt: number;
+  lastFiredAt?: number;
+}
+
+const STORAGE_KEY = "pillbox.reminders.v1";
+
+function parseHHMMToDate(hhmm: string, base: Date): Date {
+  const [h, m] = hhmm.split(":").map((n) => parseInt(n, 10));
+  return set(base, { hours: h, minutes: m, seconds: 0, milliseconds: 0 });
+}
+
+function nextOccurrence(times: string[], repeat: RepeatType, from: Date): Date | null {
+  const sorted = [...times].sort();
+  for (const t of sorted) {
+    const candidate = parseHHMMToDate(t, from);
+    if (isAfter(candidate, from) || candidate.getTime() === from.getTime()) {
+      return candidate;
+    }
+  }
+  if (repeat === "daily") {
+    const tomorrow = new Date(from);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    return parseHHMMToDate(sorted[0], tomorrow);
+  }
+  return null;
+}
+
+export function useReminders() {
+  const [reminders, setReminders] = useState<Reminder[]>(() => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return [];
+      const parsed = JSON.parse(raw) as Reminder[];
+      return parsed.map((r) => ({ ...r, paused: !!r.paused }));
+    } catch {
+      return [];
+    }
+  });
+
+  const timers = useRef<Record<string, number>>({});
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(reminders));
+  }, [reminders]);
+
+  function schedule(rem: Reminder) {
+    if (rem.paused || rem.nextAt == null) return;
+    const now = new Date();
+    const delay = Math.max(0, differenceInMilliseconds(new Date(rem.nextAt), now));
+    clearTimer(rem.id);
+    timers.current[rem.id] = window.setTimeout(async () => {
+      try {
+        await notify({
+          title: `Time to take ${rem.name}`,
+          body: rem.dosage ? `Dosage: ${rem.dosage}` : undefined,
+        });
+      } finally {
+        setReminders((prev) => {
+          const next = [...prev];
+          const idx = next.findIndex((r) => r.id === rem.id);
+          if (idx === -1) return prev;
+          const r = next[idx];
+          r.lastFiredAt = Date.now();
+          if (r.repeat === "daily") {
+            const n = nextOccurrence(r.times, r.repeat, new Date());
+            r.nextAt = n ? n.getTime() : null;
+            toast.success(`Scheduled next dose for ${r.name}`);
+            schedule(r);
+          } else {
+            // one-time reminder completes
+            toast.success(`Completed one-time reminder for ${r.name}`);
+            next.splice(idx, 1);
+          }
+          return [...next];
+        });
+      }
+    }, delay);
+  }
+
+  function clearTimer(id: string) {
+    const t = timers.current[id];
+    if (t) {
+      clearTimeout(t);
+      delete timers.current[id];
+    }
+  }
+
+  useEffect(() => {
+    // re-schedule all on list changes
+    reminders.forEach((r) => schedule(r));
+    return () => {
+      Object.values(timers.current).forEach((t) => clearTimeout(t));
+      timers.current = {};
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reminders.length]);
+
+  // On mount, check for missed reminders and compute nextAt where needed
+  useEffect(() => {
+    setReminders((prev) => {
+      const now = new Date();
+      return prev.map((r) => {
+        if (r.paused) return r;
+        if (r.nextAt == null) {
+          const n = nextOccurrence(r.times, r.repeat, now);
+          return { ...r, nextAt: n ? n.getTime() : null };
+        }
+        // If nextAt is in the past, roll forward
+        if (isBefore(new Date(r.nextAt), now)) {
+          const n = nextOccurrence(r.times, r.repeat, now);
+          return { ...r, nextAt: n ? n.getTime() : null };
+        }
+        return r;
+      });
+    });
+  }, []);
+
+  const upcoming = useMemo(() => {
+    return [...reminders]
+      .filter((r) => !r.paused && r.nextAt != null)
+      .sort((a, b) => (a.nextAt! - b.nextAt!));
+  }, [reminders]);
+
+  function addReminder(input: Omit<Reminder, "id" | "createdAt" | "nextAt" | "paused">) {
+    const id = crypto.randomUUID();
+    const now = new Date();
+    const n = nextOccurrence(input.times, input.repeat, now);
+    const rem: Reminder = {
+      id,
+      name: input.name,
+      dosage: input.dosage,
+      times: input.times,
+      repeat: input.repeat,
+      sendSms: input.sendSms,
+      phone: input.phone,
+      createdAt: Date.now(),
+      paused: false,
+      nextAt: n ? n.getTime() : null,
+    };
+    setReminders((prev) => [...prev, rem]);
+    toast.success(`Reminder added for ${input.name}`);
+  }
+
+  function removeReminder(id: string) {
+    clearTimer(id);
+    setReminders((prev) => prev.filter((r) => r.id !== id));
+  }
+
+  function togglePause(id: string) {
+    setReminders((prev) => prev.map((r) => (r.id === id ? { ...r, paused: !r.paused } : r)));
+  }
+
+  function snooze(id: string, minutes: number) {
+    setReminders((prev) => prev.map((r) => {
+      if (r.id !== id) return r;
+      const when = Date.now() + minutes * 60_000;
+      return { ...r, nextAt: when };
+    }));
+    toast(`Snoozed for ${minutes} min`);
+  }
+
+  function markTaken(id: string) {
+    setReminders((prev) => {
+      const next = [...prev];
+      const idx = next.findIndex((r) => r.id === id);
+      if (idx === -1) return prev;
+      const r = next[idx];
+      r.lastFiredAt = Date.now();
+      if (r.repeat === "daily") {
+        const n = nextOccurrence(r.times, r.repeat, new Date());
+        r.nextAt = n ? n.getTime() : null;
+        toast.success(`Great! Next dose for ${r.name} scheduled.`);
+      } else {
+        next.splice(idx, 1);
+        toast.success(`Completed one-time reminder for ${r.name}`);
+      }
+      return next;
+    });
+  }
+
+  function updateReminder(id: string, patch: Partial<Reminder>) {
+    setReminders((prev) => prev.map((r) => (r.id === id ? { ...r, ...patch } : r)));
+  }
+
+  return {
+    reminders,
+    upcoming,
+    addReminder,
+    removeReminder,
+    togglePause,
+    snooze,
+    markTaken,
+    updateReminder,
+  } as const;
+}

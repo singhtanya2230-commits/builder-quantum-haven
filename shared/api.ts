@@ -10,3 +10,30 @@
 export interface DemoResponse {
   message: string;
 }
+
+export type RepeatType = "once" | "daily";
+
+export interface ReminderDTO {
+  id: string;
+  name: string;
+  dosage: string;
+  times: string[]; // HH:mm 24h
+  repeat: RepeatType;
+  nextAt: number | null;
+  paused: boolean;
+  phone?: string;
+  sendSms?: boolean;
+  createdAt: number;
+  lastFiredAt?: number;
+}
+
+export interface SmsRequest {
+  to: string;
+  message: string;
+}
+
+export interface SmsResponse {
+  success: boolean;
+  id?: string;
+  error?: string;
+}

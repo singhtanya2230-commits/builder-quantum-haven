@@ -1,62 +1,200 @@
-import { DemoResponse } from "@shared/api";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
+import { useReminders } from "@/hooks/use-reminders";
+import { requestNotificationPermission } from "@/lib/notifications";
+import { format } from "date-fns";
+import { AlarmClock, Bell, Clock, Phone, Plus, Trash2 } from "lucide-react";
+import { toast } from "sonner";
+
+function TimeField({ value, onChange, onRemove }: { value: string; onChange: (v: string) => void; onRemove?: () => void }) {
+  return (
+    <div className="flex items-center gap-2">
+      <Input type="time" value={value} onChange={(e) => onChange(e.target.value)} className="w-[140px]" />
+      {onRemove && (
+        <Button type="button" variant="ghost" size="icon" onClick={onRemove} aria-label="Remove time">
+          <Trash2 className="h-4 w-4" />
+        </Button>
+      )}
+    </div>
+  );
+}
 
 export default function Index() {
-  const [exampleFromServer, setExampleFromServer] = useState("");
-  // Fetch users on component mount
+  const { reminders, upcoming, addReminder, removeReminder, togglePause, snooze, markTaken, updateReminder } = useReminders();
+
+  const [name, setName] = useState("");
+  const [dosage, setDosage] = useState("");
+  const [times, setTimes] = useState<string[]>(["09:00"]);
+  const [repeat, setRepeat] = useState<"once" | "daily">("daily");
+  const [sendSms, setSendSms] = useState(false);
+  const [phone, setPhone] = useState("");
+
   useEffect(() => {
-    fetchDemo();
+    if (Notification && Notification.permission !== "granted") {
+      requestNotificationPermission();
+    }
   }, []);
 
-  // Example of how to fetch data from the server (if needed)
-  const fetchDemo = async () => {
-    try {
-      const response = await fetch("/api/demo");
-      const data = (await response.json()) as DemoResponse;
-      setExampleFromServer(data.message);
-    } catch (error) {
-      console.error("Error fetching hello:", error);
+  const canSendSms = sendSms && phone.trim().length > 0;
+
+  function reset() {
+    setName("");
+    setDosage("");
+    setTimes(["09:00"]);
+    setRepeat("daily");
+    setSendSms(false);
+    setPhone("");
+  }
+
+  function onSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!name.trim()) {
+      toast.error("Please enter a medicine name");
+      return;
     }
-  };
+    addReminder({ name: name.trim(), dosage: dosage.trim(), times: times.filter(Boolean), repeat, sendSms: canSendSms, phone: phone.trim() });
+    reset();
+  }
+
+  const hasDeniedNotifications = typeof window !== "undefined" && "Notification" in window && Notification.permission === "denied";
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-100 to-slate-200">
-      <div className="text-center">
-        {/* TODO: FUSION_GENERATION_APP_PLACEHOLDER replace everything here with the actual app! */}
-        <h1 className="text-2xl font-semibold text-slate-800 flex items-center justify-center gap-3">
-          <svg
-            className="animate-spin h-8 w-8 text-slate-400"
-            viewBox="0 0 50 50"
-          >
-            <circle
-              className="opacity-30"
-              cx="25"
-              cy="25"
-              r="20"
-              stroke="currentColor"
-              strokeWidth="5"
-              fill="none"
-            />
-            <circle
-              className="text-slate-600"
-              cx="25"
-              cy="25"
-              r="20"
-              stroke="currentColor"
-              strokeWidth="5"
-              fill="none"
-              strokeDasharray="100"
-              strokeDashoffset="75"
-            />
-          </svg>
-          Generating your app...
-        </h1>
-        <p className="mt-4 text-slate-600 max-w-md">
-          Watch the chat on the left for updates that might need your attention
-          to finish generating
-        </p>
-        <p className="mt-4 hidden max-w-md">{exampleFromServer}</p>
-      </div>
-    </div>
+    <main className="container px-4 py-12">
+      <section className="mx-auto max-w-4xl">
+        <div className="mb-8 text-center">
+          <div className="inline-flex items-center gap-2 rounded-full bg-secondary px-3 py-1 text-xs font-semibold text-secondary-foreground">
+            <Bell className="h-3.5 w-3.5" /> Digital Pillbox Reminder
+          </div>
+          <h1 className="mt-4 text-4xl font-extrabold tracking-tight sm:text-5xl">Never miss a dose again</h1>
+          <p className="mt-3 text-muted-foreground text-lg">
+            Input your medicines and schedule reminders. Get local notifications instantly. Optional SMS via server when configured.
+          </p>
+          {hasDeniedNotifications && (
+            <div className="mt-4 rounded-md border border-amber-300 bg-amber-50 p-3 text-amber-900">
+              Notifications are blocked. Enable them in your browser settings to get alerts.
+            </div>
+          )}
+        </div>
+
+        <div className="grid gap-6 md:grid-cols-2">
+          <Card className="shadow-md">
+            <CardHeader>
+              <CardTitle>New Reminder</CardTitle>
+              <CardDescription>Medicine, dosage and times. Choose once or daily.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={onSubmit} className="grid gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="name">Medicine</Label>
+                  <Input id="name" placeholder="e.g. Amoxicillin" value={name} onChange={(e) => setName(e.target.value)} />
+                </div>
+
+                <div className="grid gap-2">
+                  <Label htmlFor="dosage">Dosage</Label>
+                  <Input id="dosage" placeholder="e.g. 500mg" value={dosage} onChange={(e) => setDosage(e.target.value)} />
+                </div>
+
+                <div className="grid gap-2">
+                  <Label>Times</Label>
+                  <div className="flex flex-col gap-2">
+                    {times.map((t, i) => (
+                      <TimeField key={i} value={t} onChange={(v) => setTimes((prev) => prev.map((x, idx) => (idx === i ? v : x)))} onRemove={times.length > 1 ? () => setTimes((prev) => prev.filter((_, idx) => idx !== i)) : undefined} />
+                    ))}
+                  </div>
+                  <div>
+                    <Button type="button" variant="outline" size="sm" onClick={() => setTimes((prev) => [...prev, "13:00"]) }>
+                      <Plus className="h-4 w-4" /> Add time
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-4">
+                  <div className="flex items-center gap-3">
+                    <span className={`rounded-full px-3 py-1 text-xs font-semibold ${repeat === "daily" ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"}`}>Daily</span>
+                    <Switch checked={repeat === "daily"} onCheckedChange={(v) => setRepeat(v ? "daily" : "once")} />
+                    <span className={`rounded-full px-3 py-1 text-xs font-semibold ${repeat === "once" ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"}`}>Once</span>
+                  </div>
+                </div>
+
+                <div className="rounded-md border p-4">
+                  <div className="flex items-center gap-2">
+                    <Phone className="h-4 w-4 text-muted-foreground" />
+                    <p className="text-sm text-muted-foreground">Optional SMS (requires server config)</p>
+                  </div>
+                  <div className="mt-3 grid gap-2 sm:grid-cols-[auto_1fr] sm:items-center sm:gap-4">
+                    <div className="flex items-center gap-2">
+                      <Switch checked={sendSms} onCheckedChange={setSendSms} id="sms" />
+                      <Label htmlFor="sms">Send SMS too</Label>
+                    </div>
+                    <Input type="tel" placeholder="+1 555 123 4567" value={phone} onChange={(e) => setPhone(e.target.value)} disabled={!sendSms} />
+                  </div>
+                  {!sendSms && (
+                    <p className="mt-2 text-xs text-muted-foreground">Local notifications work immediately. To enable SMS, deploy and configure TWILIO env vars.</p>
+                  )}
+                </div>
+
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <AlarmClock className="h-4 w-4" />
+                    <span>Reminders will ring at the times you set.</span>
+                  </div>
+                  <Button type="submit">Schedule</Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+
+          <Card className="shadow-md">
+            <CardHeader>
+              <CardTitle>Upcoming</CardTitle>
+              <CardDescription>Your next reminders</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {upcoming.length === 0 && (
+                  <div className="rounded-md border bg-secondary/30 p-6 text-center text-sm text-muted-foreground">No upcoming reminders. Add one on the left.</div>
+                )}
+                {upcoming.map((r) => (
+                  <div key={r.id} className="flex items-center justify-between rounded-lg border p-3">
+                    <div className="flex min-w-0 items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 text-white">
+                        <Clock className="h-5 w-5" />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="font-semibold truncate">{r.name}</p>
+                          {r.dosage && <Badge variant="secondary">{r.dosage}</Badge>}
+                          {r.repeat === "daily" ? <Badge>Daily</Badge> : <Badge variant="outline">Once</Badge>}
+                        </div>
+                        <p className="text-sm text-muted-foreground">Next at {r.nextAt ? format(r.nextAt, "EEE, MMM d • h:mm a") : "n/a"}</p>
+                      </div>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-2">
+                      <Button variant="outline" size="sm" onClick={() => snooze(r.id, 10)}>Snooze 10m</Button>
+                      <Button variant="secondary" size="sm" onClick={() => markTaken(r.id)}>Taken</Button>
+                      <Button variant="ghost" size="icon" onClick={() => togglePause(r.id)} aria-label="Pause or resume">
+                        {r.paused ? <span className="text-xs">Resume</span> : <span className="text-xs">Pause</span>}
+                      </Button>
+                      <Button variant="ghost" size="icon" onClick={() => removeReminder(r.id)} aria-label="Delete">
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {reminders.length > 0 && (
+                <p className="mt-4 text-center text-xs text-muted-foreground">Total reminders: {reminders.length}</p>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </section>
+    </main>
   );
 }
