@@ -80,6 +80,7 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
+      <ReminderPopup />
       <div className="min-h-screen bg-[radial-gradient(60%_60%_at_50%_0%,#e6f9ff_0%,transparent_60%),linear-gradient(to_bottom_right,#f8fbff,#f3f6ff)] dark:bg-background">
         <BrowserRouter>
           <Header />
