@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Button } from "./ui/button";
 import { Card } from "./ui/card";
-import { Clock, Snooze, Check, X } from "lucide-react";
+import { Clock, Check, X } from "lucide-react";
 import { ReminderAPI } from "@/lib/reminder-api";
 
 type FiredDetail = {
