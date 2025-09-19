@@ -259,7 +259,8 @@ export function useReminders() {
     setReminders((prev) => prev.map((r) => {
       if (r.id !== id) return r;
       const when = Date.now() + minutes * 60_000;
-      return { ...r, nextAt: when };
+      const h = [ ...(r.history || []), { type: "snoozed", at: Date.now(), meta: { minutes } } ];
+      return { ...r, nextAt: when, history: h };
     }));
     toast(`Snoozed for ${minutes} min`);
   }
@@ -271,6 +272,7 @@ export function useReminders() {
       if (idx === -1) return prev;
       const r = next[idx];
       r.lastFiredAt = Date.now();
+      r.history = [ ...(r.history || []), { type: "taken", at: Date.now() } ];
       if (r.repeat === "daily") {
         const n = nextOccurrence(r.times, r.repeat, new Date());
         r.nextAt = n ? n.getTime() : null;
